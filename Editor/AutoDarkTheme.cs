@@ -3,7 +3,9 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 
+#if UNITY_EDITOR_WIN
 using AutoDarkTheme.Windows;
+#endif
 
 namespace AutoDarkTheme
 {
