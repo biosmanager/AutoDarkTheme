@@ -1,0 +1,19 @@
+{
+  "name": "com.biosmanager.autodarktheme",
+  "version": "1.0.0",
+  "displayName": "Auto Dark Theme",
+  "description": "Automatically changes the Unity editor theme based on system settings.",
+  "unity": "2018.4",
+  "keywords": [
+    "auto",
+    "editor",
+    "theme",
+    "skin",
+    "dark"
+  ],
+  "author": {
+    "name": "biosmanager",
+    "email": "github@biosmanager.com",
+    "url": "https://github.com/biosmanager"
+  }
+}
