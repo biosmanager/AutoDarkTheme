@@ -7,8 +7,9 @@ namespace AutoDarkTheme
 	class UserPreferences : SettingsProvider
 	{
 		static readonly string KEY_EDITORPREF_IS_ENABLED = "AutoDarkTheme.IsEnabled";
+		static readonly string KEY_EDITORPREF_MODE = "AutoDarkTheme.Mode";
 
-		public enum Mode
+		public enum AutoThemeMode
         {
 			System,
 			Time
@@ -17,11 +18,12 @@ namespace AutoDarkTheme
 		private static bool s_prefsLoaded = false;
 
 		private static bool s_isEnabled;
-		private static Mode s_mode;
+		private static AutoThemeMode s_mode;
 
 		internal class Styles
 		{
 			public static readonly GUIContent enabled = EditorGUIUtility.TrTextContent("Enabled");
+			public static readonly GUIContent mode = EditorGUIUtility.TrTextContent("Change theme based on");
 		}
 
 		public static event EventHandler PreferencesChanged;
@@ -45,11 +47,26 @@ namespace AutoDarkTheme
 			}
 		}
 
+		public static AutoThemeMode Mode 
+		{
+			get 
+			{
+				LoadAllPreferenceValues();
+				return s_mode;
+			}
+			set 
+			{
+				s_mode = value;
+				SaveAllPreferenceValues();
+			}
+		} 
+
 		private static void LoadAllPreferenceValues()
 		{
 			if (!s_prefsLoaded)
 			{
 				s_isEnabled = EditorPrefs.GetBool(KEY_EDITORPREF_IS_ENABLED, true);
+				s_mode = (AutoThemeMode)EditorPrefs.GetInt(KEY_EDITORPREF_MODE);
 
 				s_prefsLoaded = true;
 			}
@@ -58,6 +75,7 @@ namespace AutoDarkTheme
 		private static void SaveAllPreferenceValues()
 		{
 			EditorPrefs.SetBool(KEY_EDITORPREF_IS_ENABLED, s_isEnabled);
+			EditorPrefs.SetInt(KEY_EDITORPREF_MODE, (int)s_mode);
 
 			RaisePreferencesChanged();
 		}
@@ -71,7 +89,7 @@ namespace AutoDarkTheme
 		public override void OnGUI(string searchContext)
 		{
 			s_isEnabled = EditorGUILayout.Toggle("Enabled", s_isEnabled);
-			EditorGUILayout.EnumPopup()
+			s_mode = (AutoThemeMode)EditorGUILayout.EnumPopup("Change theme based on", s_mode);
 
 			if (GUI.changed)
 			{
