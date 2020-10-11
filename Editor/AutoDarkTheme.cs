@@ -21,9 +21,10 @@ namespace AutoDarkTheme
 
         private static ScheduleTimer timer;
 
+
         static AutoDarkTheme()
         {
-            UserPreferences.PreferencesChanged += new EventHandler(OnSettingsChanged);
+            UserPreferences.PreferencesChanged += (sender, args) => MonitorThemeChanges();
 
             MonitorThemeChanges();
         }
@@ -36,32 +37,13 @@ namespace AutoDarkTheme
             timer?.Stop();
         }
 
-
-        private static void Update()
-        {
-            SetEditorThemeFromSystemTheme();
-            // Remove from update loop, this should only be called once after the system theme changes
-            EditorApplication.update -= Update;
-        }
-
-        private static void OnSettingsChanged(object sender, EventArgs e)
-        {
-            Debug.Log(UserPreferences.IsEnabled);
-            MonitorThemeChanges();
-        }
-
-        private static void OnRegChanged(object sender, EventArgs e)
-        {
-            // Add Update() method to update loop, calling SwitchSkinAndRepaintAllViews() alone doesn't work
-            EditorApplication.update += Update;
-        }
-
-
         private static void MonitorThemeChanges()
         {
 #if UNITY_EDITOR_WIN
             registryMonitor?.Stop();
 #endif
+
+            timer?.Stop();
 
             if (UserPreferences.IsEnabled)
             {
@@ -70,7 +52,7 @@ namespace AutoDarkTheme
 #if UNITY_EDITOR_WIN
                     // Windows: Watch system theme changes in registry
                     registryMonitor = new RegistryMonitor(RegistryHive.CurrentUser, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize");
-                    registryMonitor.RegChanged += new EventHandler(OnRegChanged);
+                    registryMonitor.RegChanged += (sender, args) => SetEditorThemeFromSystemTheme();
                     registryMonitor.Start();
 
                     // Set current system theme on start/when enabled
@@ -79,12 +61,48 @@ namespace AutoDarkTheme
                 }
                 else if (UserPreferences.Mode == UserPreferences.AutoThemeMode.Time)
                 {
-                    var lightThemeSchedule = new ScheduledTime("Daily", "4:17 PM");
-                    var darkThemeSchedule = new ScheduledTime("Daily", "6:00 PM");
+                    // Default light theme time
+                    var lightThemeTime = UserPreferences.DEFAULT_LIGHT_THEME_TIME;
+                    // Default dark theme time
+                    var darkThemeTime = UserPreferences.DEFAULT_DARK_THEME_TIME;
 
+                    // Parse light theme time
+                    try
+                    {
+                        lightThemeTime = TimeSpan.Parse(UserPreferences.LightThemeTime);
+                    }
+                    catch (Exception e) when (e is FormatException || e is OverflowException)
+                    {
+                        Debug.LogError($"Auto Dark Theme: Invalid light theme time: {UserPreferences.LightThemeTime}, reverting to {UserPreferences.DEFAULT_LIGHT_THEME_TIME}.");
+                    }
+
+                    // Parse dark theme time
+                    try
+                    {
+                        darkThemeTime = TimeSpan.Parse(UserPreferences.DarkThemeTime);
+                    }
+                    catch (Exception e) when (e is FormatException || e is OverflowException)
+                    {
+                        Debug.LogError($"Auto Dark Theme: Invalid dark theme time: {UserPreferences.LightThemeTime}, reverting to {UserPreferences.DEFAULT_DARK_THEME_TIME}.");
+                    }
+
+                    // Check current time and set theme
+                    // UNDONE: When light theme time is later than dark theme time, this doesn't work.
+                    if (DateTime.Now.TimeOfDay >= lightThemeTime && DateTime.Now.TimeOfDay < darkThemeTime)
+                    {
+                        EditorThemeChanger.SetLightTheme();
+                    }
+                    else
+                    {
+                        EditorThemeChanger.SetDarkTheme();
+                    }
+
+                    // Schedule theme changes
+                    var lightThemeSchedule = new ScheduledTime(EventTimeBase.Daily, lightThemeTime);
+                    var darkThemeSchedule = new ScheduledTime(EventTimeBase.Daily, darkThemeTime);
                     timer = new ScheduleTimer();
-                    timer.AddJob(lightThemeSchedule, new Action(SetLightTheme));
-                    timer.AddJob(darkThemeSchedule, new Action(SetDarkTheme));
+                    timer.AddJob(lightThemeSchedule, new Action(EditorThemeChanger.SetLightTheme));
+                    timer.AddJob(darkThemeSchedule, new Action(EditorThemeChanger.SetDarkTheme));
                     timer.Start();
                 }
             }
@@ -95,30 +113,15 @@ namespace AutoDarkTheme
 #if UNITY_EDITOR_WIN
             var appsUseLightTheme = registryMonitor.ReadDword("AppsUseLightTheme");
 
-            if (appsUseLightTheme == 1 && EditorGUIUtility.isProSkin)
+            if (appsUseLightTheme == 1)
             {
-                SetLightTheme();
+                EditorThemeChanger.SetLightTheme();
             }
-            else if (appsUseLightTheme == 0 && !EditorGUIUtility.isProSkin)
+            else if (appsUseLightTheme == 0)
             {
-                SetDarkTheme();
+                EditorThemeChanger.SetDarkTheme();
             }
 #endif
-        }
-
-        private static void SetLightTheme()
-        {
-            Debug.Log("Editor: Switching to light theme....");
-
-            EditorPrefs.SetInt("UserSkin", 0);
-            InternalEditorUtility.SwitchSkinAndRepaintAllViews();
-        }
-
-        private static void SetDarkTheme()
-        {
-            Debug.Log("Editor: Switching to dark theme...");
-            EditorPrefs.SetInt("UserSkin", 1);
-            InternalEditorUtility.SwitchSkinAndRepaintAllViews();
         }
     }
 }
