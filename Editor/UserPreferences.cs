@@ -1,7 +1,6 @@
 ﻿using System;
 using UnityEngine;
 using UnityEditor;
-using UnityEngine.UIElements;
 
 namespace AutoDarkTheme
 {
@@ -20,23 +19,24 @@ namespace AutoDarkTheme
 		}
 
 
-		static readonly string KEY_EDITORPREF_IS_ENABLED = "AutoDarkTheme.IsEnabled";
-		static readonly string KEY_EDITORPREF_MODE = "AutoDarkTheme.Mode";
-		static readonly string KEY_EDITORPREF_LIGHT_THEME_TIME = "AutoDarkTheme.LightThemeTime";
-		static readonly string KEY_EDITORPREF_DARK_THEME_TIME = "AutoDarkTheme.DarkThemeTime";
-
-
-		private static bool s_prefsLoaded = false;
-		private static bool s_isEnabled;
-		private static AutoThemeMode s_mode;
-		private static string s_lightThemeTime;
-		private static string s_darkThemeTime;
-
-
 		public static readonly bool DEFAULT_IS_ENABLED = true;
 		public static readonly AutoThemeMode DEFAULT_MODE = AutoThemeMode.System;
 		public static readonly TimeSpan DEFAULT_LIGHT_THEME_TIME = new TimeSpan(07, 00, 00);
 		public static readonly TimeSpan DEFAULT_DARK_THEME_TIME = new TimeSpan(18, 00, 00);
+
+		private static readonly string KEY_EDITORPREF_IS_ENABLED = "AutoDarkTheme.IsEnabled";
+		private static readonly string KEY_EDITORPREF_MODE = "AutoDarkTheme.Mode";
+		private static readonly string KEY_EDITORPREF_LIGHT_THEME_TIME = "AutoDarkTheme.LightThemeTime";
+		private static readonly string KEY_EDITORPREF_DARK_THEME_TIME = "AutoDarkTheme.DarkThemeTime";
+
+		private static bool s_prefsLoaded = false;
+		private static bool s_isEnabled;
+		private static AutoThemeMode s_mode;
+		private static TimeSpan s_lightThemeTime;
+		private static TimeSpan s_darkThemeTime;
+
+		private static string gui_lightThemeTime;
+		private static string gui_darkThemeTime;
 
 
 		public static bool IsEnabled
@@ -67,7 +67,7 @@ namespace AutoDarkTheme
 			}
 		}
 
-		public static string LightThemeTime
+		public static TimeSpan LightThemeTime
         {
 			get
             {
@@ -81,7 +81,7 @@ namespace AutoDarkTheme
             }
         }
 
-		public static string DarkThemeTime
+		public static TimeSpan DarkThemeTime
 		{
 			get
 			{
@@ -110,8 +110,11 @@ namespace AutoDarkTheme
 			{
 				s_isEnabled = EditorPrefs.GetBool(KEY_EDITORPREF_IS_ENABLED, DEFAULT_IS_ENABLED);
 				s_mode = (AutoThemeMode)EditorPrefs.GetInt(KEY_EDITORPREF_MODE, (int)DEFAULT_MODE);
-				s_lightThemeTime = EditorPrefs.GetString(KEY_EDITORPREF_LIGHT_THEME_TIME, DEFAULT_LIGHT_THEME_TIME.ToString());
-				s_darkThemeTime = EditorPrefs.GetString(KEY_EDITORPREF_DARK_THEME_TIME, DEFAULT_DARK_THEME_TIME.ToString());
+				s_lightThemeTime = TimeSpan.Parse(EditorPrefs.GetString(KEY_EDITORPREF_LIGHT_THEME_TIME, DEFAULT_LIGHT_THEME_TIME.ToString()));
+				s_darkThemeTime = TimeSpan.Parse(EditorPrefs.GetString(KEY_EDITORPREF_DARK_THEME_TIME, DEFAULT_DARK_THEME_TIME.ToString()));
+
+				gui_lightThemeTime = s_lightThemeTime.ToString();
+				gui_darkThemeTime = s_darkThemeTime.ToString();
 
 				s_prefsLoaded = true;
 			}
@@ -121,8 +124,8 @@ namespace AutoDarkTheme
 		{
 			EditorPrefs.SetBool(KEY_EDITORPREF_IS_ENABLED, s_isEnabled);
 			EditorPrefs.SetInt(KEY_EDITORPREF_MODE, (int)s_mode);
-			EditorPrefs.SetString(KEY_EDITORPREF_LIGHT_THEME_TIME, s_lightThemeTime);
-			EditorPrefs.SetString(KEY_EDITORPREF_DARK_THEME_TIME, s_darkThemeTime);
+			EditorPrefs.SetString(KEY_EDITORPREF_LIGHT_THEME_TIME, s_lightThemeTime.ToString());
+			EditorPrefs.SetString(KEY_EDITORPREF_DARK_THEME_TIME, s_darkThemeTime.ToString());
 
 			RaisePreferencesChanged();
 		}
@@ -135,35 +138,57 @@ namespace AutoDarkTheme
 
 		public override void OnGUI(string searchContext)
 		{
+			bool areValuesValid = true;
+
 			s_isEnabled = EditorGUILayout.Toggle("Enabled", s_isEnabled);
 
 			if (s_isEnabled)
             {
 				s_mode = (AutoThemeMode)EditorGUILayout.EnumPopup("Change theme based on", s_mode);
 
-				if (s_mode == AutoThemeMode.Time)
+				if (s_mode == AutoThemeMode.System)
+                {
+#if UNITY_EDITOR_OSX
+					EditorGUILayout.HelpBox("macOS system-based theme switching is currently not supported!", MessageType.Warning);
+#endif
+				}
+				else if (s_mode == AutoThemeMode.Time)
 				{
-					s_lightThemeTime = EditorGUILayout.TextField("Enable light theme at", s_lightThemeTime);
-					s_darkThemeTime = EditorGUILayout.TextField("Enable dark theme at", s_darkThemeTime);
+					gui_lightThemeTime = EditorGUILayout.DelayedTextField("Enable light theme at", gui_lightThemeTime);
+					gui_darkThemeTime = EditorGUILayout.DelayedTextField("Enable dark theme at", gui_darkThemeTime);
+
+					EditorGUILayout.Space();
+
+					try
+					{
+						s_lightThemeTime = TimeSpan.Parse(gui_lightThemeTime);
+					}
+					catch (Exception e) when (e is FormatException || e is OverflowException)
+					{
+						areValuesValid = false;
+						EditorGUILayout.HelpBox($"Invalid light theme time! Must be hh:mm:ss (24-hour format).", MessageType.Error);
+					}
+
+					try
+					{
+						s_darkThemeTime = TimeSpan.Parse(gui_darkThemeTime);
+					}
+					catch (Exception e) when (e is FormatException || e is OverflowException)
+					{
+						areValuesValid = false;
+						EditorGUILayout.HelpBox($"Invalid dark theme time! Must be hh:mm:ss (24-hour format).", MessageType.Error);
+					}
 				}
             }
 
-			EditorGUILayout.Space();
-
-			if (GUILayout.Button("Apply"))
-			{
-				SaveAllPreferenceValues();
-			}
-		}
-
-        public override void OnDeactivate()
-		{
-			SaveAllPreferenceValues();
+            if (GUI.changed && areValuesValid)
+			{ 
+				SaveAllPreferenceValues();            
+            }
         }
 
-        // Register the SettingsProvider
         [SettingsProvider]
-		public static SettingsProvider CreateAssetGraphUserPreference()
+		public static SettingsProvider CreateAutoDarkThemeUserPreference()
 		{
 			var provider = new UserPreferences("Preferences/Auto Dark Theme")
 			{

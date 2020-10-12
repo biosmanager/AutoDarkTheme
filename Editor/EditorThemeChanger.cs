@@ -12,6 +12,7 @@ namespace AutoDarkTheme
             Dark
         }
 
+
         private static Theme themeToSet;
 
 

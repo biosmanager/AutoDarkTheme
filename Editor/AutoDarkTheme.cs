@@ -13,12 +13,11 @@ using AutoDarkTheme.Windows;
 namespace AutoDarkTheme
 {
     [InitializeOnLoad]
-    public class AutoDarkTheme
+    public static class AutoDarkTheme
     {
 #if UNITY_EDITOR_WIN
         private static RegistryMonitor registryMonitor;
 #endif
-
         private static ScheduleTimer timer;
 
 
@@ -27,14 +26,6 @@ namespace AutoDarkTheme
             UserPreferences.PreferencesChanged += (sender, args) => MonitorThemeChanges();
 
             MonitorThemeChanges();
-        }
-
-        ~AutoDarkTheme()
-        {
-#if UNITY_EDITOR_WIN
-            registryMonitor?.Stop();
-#endif
-            timer?.Stop();
         }
 
         private static void MonitorThemeChanges()
@@ -61,45 +52,35 @@ namespace AutoDarkTheme
                 }
                 else if (UserPreferences.Mode == UserPreferences.AutoThemeMode.Time)
                 {
-                    // Default light theme time
-                    var lightThemeTime = UserPreferences.DEFAULT_LIGHT_THEME_TIME;
-                    // Default dark theme time
-                    var darkThemeTime = UserPreferences.DEFAULT_DARK_THEME_TIME;
-
-                    // Parse light theme time
-                    try
-                    {
-                        lightThemeTime = TimeSpan.Parse(UserPreferences.LightThemeTime);
-                    }
-                    catch (Exception e) when (e is FormatException || e is OverflowException)
-                    {
-                        Debug.LogError($"Auto Dark Theme: Invalid light theme time: {UserPreferences.LightThemeTime}, reverting to {UserPreferences.DEFAULT_LIGHT_THEME_TIME}.");
-                    }
-
-                    // Parse dark theme time
-                    try
-                    {
-                        darkThemeTime = TimeSpan.Parse(UserPreferences.DarkThemeTime);
-                    }
-                    catch (Exception e) when (e is FormatException || e is OverflowException)
-                    {
-                        Debug.LogError($"Auto Dark Theme: Invalid dark theme time: {UserPreferences.LightThemeTime}, reverting to {UserPreferences.DEFAULT_DARK_THEME_TIME}.");
-                    }
+                    var now = DateTime.Now.TimeOfDay;
 
                     // Check current time and set theme
-                    // UNDONE: When light theme time is later than dark theme time, this doesn't work.
-                    if (DateTime.Now.TimeOfDay >= lightThemeTime && DateTime.Now.TimeOfDay < darkThemeTime)
+                    if (UserPreferences.LightThemeTime < UserPreferences.DarkThemeTime)
                     {
-                        EditorThemeChanger.SetLightTheme();
+                        if (now >= UserPreferences.LightThemeTime && now < UserPreferences.DarkThemeTime)
+                        {
+                            EditorThemeChanger.SetLightTheme();
+                        }
+                        else
+                        {
+                            EditorThemeChanger.SetDarkTheme();
+                        }
                     }
                     else
                     {
-                        EditorThemeChanger.SetDarkTheme();
+                        if (now < UserPreferences.LightThemeTime && now >= UserPreferences.DarkThemeTime)
+                        {
+                            EditorThemeChanger.SetDarkTheme();
+                        }
+                        else
+                        {
+                            EditorThemeChanger.SetLightTheme();
+                        }
                     }
 
                     // Schedule theme changes
-                    var lightThemeSchedule = new ScheduledTime(EventTimeBase.Daily, lightThemeTime);
-                    var darkThemeSchedule = new ScheduledTime(EventTimeBase.Daily, darkThemeTime);
+                    var lightThemeSchedule = new ScheduledTime(EventTimeBase.Daily, UserPreferences.LightThemeTime);
+                    var darkThemeSchedule = new ScheduledTime(EventTimeBase.Daily, UserPreferences.DarkThemeTime);
                     timer = new ScheduleTimer();
                     timer.AddJob(lightThemeSchedule, new Action(EditorThemeChanger.SetLightTheme));
                     timer.AddJob(darkThemeSchedule, new Action(EditorThemeChanger.SetDarkTheme));
