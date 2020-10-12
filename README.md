@@ -1,6 +1,11 @@
 # Auto Dark Theme for Unity
 
-Automatically sets the Unity editor theme based on current time or system theme. The latter currently only works only on Windows 10 Version 1903. macOS support will be added soon.
+Automatically sets the Unity editor theme based on current time or system theme. 
+
+Supported operating system for system-based theme switching:
+
+* Windows 10 Version 1903
+* macOS Mojave (10.14.0)
 
 ![Preview](preview.png)
 
@@ -31,3 +36,7 @@ Go to `Preferences > Auto Dark Theme`.
 Windows 10 does not support time-based switching between its light and dark mode but there is a tool for that:
 
 https://github.com/Armin2208/Windows-Auto-Night-Mode
+
+## Native components
+
+On macOS, to query the current appeareance, a native plugin is used. You can find the source code [here](https://github.com/biosmanager/AutoDarkTheme-Native).

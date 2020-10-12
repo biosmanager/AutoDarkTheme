@@ -8,6 +8,8 @@ using AutoDarkTheme.Schedule.ScheduledItems;
 
 #if UNITY_EDITOR_WIN
 using AutoDarkTheme.Windows;
+#elif UNITY_EDITOR_OSX
+using AutoDarkTheme.macOS;
 #endif
 
 namespace AutoDarkTheme
@@ -17,6 +19,8 @@ namespace AutoDarkTheme
     {
 #if UNITY_EDITOR_WIN
         private static RegistryMonitor registryMonitor;
+#elif UNITY_EDITOR_OSX
+        private static AppearanceMonitor appearanceMonitor;
 #endif
         private static ScheduleTimer timer;
 
@@ -32,6 +36,8 @@ namespace AutoDarkTheme
         {
 #if UNITY_EDITOR_WIN
             registryMonitor?.Stop();
+#elif UNITY_EDITOR_OSX
+            appearanceMonitor?.Stop();
 #endif
 
             timer?.Stop();
@@ -45,9 +51,17 @@ namespace AutoDarkTheme
                     registryMonitor = new RegistryMonitor(RegistryHive.CurrentUser, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize");
                     registryMonitor.RegChanged += (sender, args) => SetEditorThemeFromSystemTheme();
                     registryMonitor.Start();
-
+ 
                     // Set current system theme on start/when enabled
                     SetEditorThemeFromSystemTheme();
+#elif UNITY_EDITOR_OSX
+                    // macOS
+                    appearanceMonitor = new AppearanceMonitor();
+                    appearanceMonitor.AppearanceChanged += (sender, args) =>
+                    {
+                        SetEditorThemeFromSystemTheme();
+                    };
+                    appearanceMonitor.Start();                    
 #endif
                 }
                 else if (UserPreferences.Mode == UserPreferences.AutoThemeMode.Time)
@@ -101,6 +115,17 @@ namespace AutoDarkTheme
             else if (appsUseLightTheme == 0)
             {
                 EditorThemeChanger.SetDarkTheme();
+            }
+#elif UNITY_EDITOR_OSX
+            var isDarkAppearance = AppearanceMonitor.IsDarkAppearance();
+
+            if (isDarkAppearance)
+            {
+                EditorThemeChanger.SetDarkTheme();
+            }
+            else
+            {
+                EditorThemeChanger.SetLightTheme();
             }
 #endif
         }

@@ -146,13 +146,7 @@ namespace AutoDarkTheme
             {
 				s_mode = (AutoThemeMode)EditorGUILayout.EnumPopup("Change theme based on", s_mode);
 
-				if (s_mode == AutoThemeMode.System)
-                {
-#if UNITY_EDITOR_OSX
-					EditorGUILayout.HelpBox("macOS system-based theme switching is currently not supported!", MessageType.Warning);
-#endif
-				}
-				else if (s_mode == AutoThemeMode.Time)
+				if (s_mode == AutoThemeMode.Time)
 				{
 					gui_lightThemeTime = EditorGUILayout.DelayedTextField("Enable light theme at", gui_lightThemeTime);
 					gui_darkThemeTime = EditorGUILayout.DelayedTextField("Enable dark theme at", gui_darkThemeTime);
