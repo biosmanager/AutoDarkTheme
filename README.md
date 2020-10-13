@@ -11,15 +11,21 @@ Supported operating system for system-based theme switching:
 
 ## Installation
 
-### Local 
+### Asset Store
+
+Install from https://assetstore.unity.com/packages/slug/180747.
+
+### Package Manager
+
+#### Local
 
 Clone this project locally and go to `Window > Package Manager > + > Add package from disk...` and add `package.json`.
 
-### Git
+#### Git
 
-Add `https://github.com/biosmanager/AutoDarkTheme.git` to `Window > Package Manager > + > Add package from git URL...`.
+Add `https://github.com/biosmanager/AutoDarkTheme.git#release` to `Window > Package Manager > + > Add package from git URL...`.
 
-You can append `#release` to the URL for the release branch or use `#<tag-or-commit>` for a specific tag or commit. See [UPM Git dependencies](https://docs.unity3d.com/Manual/upm-git.html).
+This will use the latest released version. You can also append `#master` instead of `#release` to the URL for the master branch or use `#<tag-or-commit>` for a specific tag or commit. See [UPM Git dependencies](https://docs.unity3d.com/Manual/upm-git.html).
 
 ## Configuration
 
