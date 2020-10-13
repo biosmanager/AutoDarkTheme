@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace AutoDarkTheme.macOS {
     public class AppearanceMonitor
     {
-        [DllImport("AutoDarkTheme-Native-macOS.bundle")]
+        [DllImport("AutoDarkTheme-Native-macOS")]
         public static extern bool IsDarkAppearance();
 
 
