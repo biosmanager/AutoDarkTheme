@@ -51,9 +51,6 @@ namespace AutoDarkTheme
                     registryMonitor = new RegistryMonitor(RegistryHive.CurrentUser, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize");
                     registryMonitor.RegChanged += (sender, args) => SetEditorThemeFromSystemTheme();
                     registryMonitor.Start();
- 
-                    // Set current system theme on start/when enabled
-                    SetEditorThemeFromSystemTheme();
 #elif UNITY_EDITOR_OSX
                     // macOS
                     appearanceMonitor = new AppearanceMonitor();
@@ -63,6 +60,8 @@ namespace AutoDarkTheme
                     };
                     appearanceMonitor.Start();                    
 #endif
+                    // Set current system theme on start/when enabled
+                    SetEditorThemeFromSystemTheme();
                 }
                 else if (UserPreferences.Mode == UserPreferences.AutoThemeMode.Time)
                 {
