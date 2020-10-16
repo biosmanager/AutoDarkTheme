@@ -4,8 +4,8 @@ Automatically sets the Unity editor theme based on current time or system theme.
 
 Supported operating system for system-based theme switching:
 
-* Windows 10 Version 1903
-* macOS Mojave (10.14.0)
+* Windows 10 Version 1903 or higher
+* macOS Mojave (10.14.0) or higher
 
 ![Preview](preview.png)
 
